@@ -11,6 +11,7 @@
  */
 
 //Molly Apsel
+//Emi Hammond
 
 public class HuffProcessor {
 
