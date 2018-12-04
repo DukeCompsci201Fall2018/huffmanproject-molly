@@ -58,6 +58,46 @@ public class HuffProcessor {
 		out.close();
 	}
 	
+	/**
+	 * the file is read again to compress it
+	 * @param codings
+	 * @param in
+	 * @param out
+	 */
+	private void writeCompressedBits(String[] codings, BitInputStream in, BitOutputStream out) {
+		while(true) {
+			int bits = in.readBits(BITS_PER_WORD);
+			if(bits == -1) break;
+			String code = codings[bits];
+			out.writeBits(code.length(), Integer.parseInt(code,2));
+		}
+		String code = codings[PSEUDO_EOF];
+		out.writeBits(code.length(), Integer.parseInt(code,2));
+		
+	}
+
+	/**
+	 * writes the the tree labeling internal nodes with 0 and leaf nodes with 1
+	 * @param root
+	 * @param out
+	 */
+	private void writeHeader(HuffNode root, BitOutputStream out) {
+		if(root.myLeft!=null || root.myRight != null) {
+			out.writeBits(1, 0);
+			writeHeader(root.myLeft, out);
+			writeHeader(root.myRight, out);
+		}
+		else {
+			out.writeBits(1, 1);
+			out.writeBits(BITS_PER_WORD+1, root.myValue);
+		}
+	}
+
+	/**
+	 * uses the tree created to make encodings for each character
+	 * @param root
+	 * @return
+	 */
 	private String[] makeCodingsFromTree(HuffNode root) {
 		String[] encodings = new String[ALPH_SIZE + 1];
 	    codingHelper(root,"",encodings);
@@ -65,9 +105,20 @@ public class HuffProcessor {
 		return null;
 	}
 
+	/**
+	 * recursively finds all the paths to the leaves using 0's and 1's and stores them in encodings
+	 * @param root
+	 * @param string
+	 * @param encodings
+	 */
 	private void codingHelper(HuffNode root, String string, String[] encodings) {
-		// TODO Auto-generated method stub
-		
+		String path = string;
+		if(root.myLeft==null && root.myRight==null) {
+			encodings[root.myValue] = path;
+			return;
+		}
+		codingHelper(root.myLeft, path+"0", encodings);
+		codingHelper(root.myRight, path+"1", encodings);
 	}
 
 	/**
